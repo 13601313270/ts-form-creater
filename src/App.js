@@ -156,7 +156,7 @@ function Item({config, value, setValue}) {
                                 {(item.attr && item.attr.title) ? item.attr.title : item.key}
                             </label>
                         </div>
-                        <div className={'ant-col ant-col-' + (attr.left || 16) + ' ant-form-item-control'}>
+                        <div className={'ant-col ant-col-' + (attr.right || 16) + ' ant-form-item-control'}>
                             <div className='ant-form-item-control-input'>
                                 <Item config={item.value} value={value[item.key]} setValue={(val) => {
                                     setValue({...value, [item.key]: val})
@@ -245,7 +245,6 @@ function App() {
     const [selectType, setSelectType] = useState('')
     const [selectTypeAttr, setSelectTypeAttr] = useState(null)
     const [selectedKeys, setSelectedKeys] = useState([])
-    console.log(protypeInfoTree(config))
 
     function typeProtypeProtype(selectConfig, attr) {
         let inner = null;
@@ -379,7 +378,6 @@ function App() {
                     <Button type="primary" style={{marginLeft: 6}} onClick={() => {
                         try {
                             const config = parse(tsStr)
-                            console.log(config)
                             setValue(getDefaultValue(config));
                             setConfig(config)
                         } catch (e) {
@@ -417,12 +415,10 @@ function App() {
                                 if (temp.type === 'array') {
                                     temp = temp.value;
                                 } else if (temp.type === 'object') {
-                                    console.log(key, temp);
                                     temp = temp.value.find(item => item.key === key);
                                 } else if (temp.type === 'objectValue') {
                                     temp = temp.value;
                                 } else if (temp.type === '|') {
-                                    console.log(key);
                                     temp = temp.value[parseInt(key)];
                                 } else {
                                     console.log(key, temp);
