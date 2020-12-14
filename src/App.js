@@ -336,42 +336,37 @@ function App() {
         } else {
             inner = []
         }
-        return <Form onFinish={(values) => {
-            console.log('================')
-            console.log(values)
-            console.log(selectedKeys)
-            let newConfig = JSON.parse(JSON.stringify(config));
-            console.log(newConfig)
-            let temp = newConfig;
-            selectedKeys.forEach(key => {
-                // console.log(key);
-                // console.log(temp)
-                if (temp.type === 'array') {
-                    temp = temp.value;
-                } else if (temp.type === 'object') {
-                    console.log(key, temp);
-                    temp = temp.value.find(item => item.key === key);
-                } else if (temp.type === 'objectValue') {
-                    temp = temp.value;
-                } else if (temp.type === '|') {
-                    console.log(key);
-                    temp = temp.value[parseInt(key)];
-                } else {
-                    console.log(key, temp);
-                    console.error('其他类型路径')
+        return <div>
+            <Form
+                key={JSON.stringify(selectedKeys)}
+                initialValues={attr}
+                onFinish={(values) => {
+                    let newConfig = JSON.parse(JSON.stringify(config));
+                    let temp = newConfig;
+                    selectedKeys.forEach(key => {
+                        if (temp.type === 'array') {
+                            temp = temp.value;
+                        } else if (temp.type === 'object') {
+                            temp = temp.value.find(item => item.key === key);
+                        } else if (temp.type === 'objectValue') {
+                            temp = temp.value;
+                        } else if (temp.type === '|') {
+                            temp = temp.value[parseInt(key)];
+                        } else {
+                            console.error('其他类型路径')
+                        }
+                    })
+                    temp.attr = values;
+                    setConfig(newConfig);
+                }}>
+                {inner}
+                {
+                    inner.length > 0 ? <Form.Item>
+                        <Button type="primary" htmlType="submit">应用</Button>
+                    </Form.Item> : <div>暂无配置</div>
                 }
-            })
-            temp.attr = values;
-            setConfig(newConfig);
-            console.log(temp);
-        }}>
-            {inner}
-            {
-                inner.length > 0 ? <Form.Item>
-                    <Button type="primary" htmlType="submit">应用</Button>
-                </Form.Item> : <div>暂无配置</div>
-            }
-        </Form>
+            </Form>
+        </div>
     }
 
     return (
@@ -413,10 +408,9 @@ function App() {
                     defaultExpandAll
                     treeData={[protypeInfoTree(config)]}
                     onSelect={(selectedKeys) => {
-                        console.log(selectedKeys);
                         if (selectedKeys.length > 0) {
                             const keyList = selectedKeys[0].split('-').slice(1);
-                            setSelectedKeys(selectedKeys[0].split('-').slice(1))
+                            setSelectedKeys(selectedKeys[0].split('-').slice(1));
                             let temp = config;
                             for (let i = 0; i < keyList.length; i++) {
                                 const key = keyList[i];
