@@ -220,7 +220,7 @@ function Item({config, value, setValue, globleKey}) {
             return <div>
                 {
                     config.value.map(item => {
-                        return <div>
+                        return <div key={item.key}>
                             <Item
                                 config={{...item, attr: {...item.attr, ...attr}}}// 左右宽度设置在"对象"层级，需要传给objectValue对象
                                 value={value[item.key]}
