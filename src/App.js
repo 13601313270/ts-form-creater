@@ -30,7 +30,7 @@ function getDefaultValue({type, value}) {
     }
 }
 
-function Item({config, value, setValue}) {
+function Item({config, value, setValue, globleKey}) {
     let temp = null;
     if (config.type === '|') {
         for (let i = 0; i < config.value.length; i++) {
@@ -40,137 +40,158 @@ function Item({config, value, setValue}) {
             }
         }
     }
-    const [orType, seOrType] = useState(temp)
-    let attr = config.attr ? config.attr : {}
-    if (config.type === 'number') {
-        return <div>
-            <InputNumber value={value} onChange={(value) => {
-                setValue(value)
-            }} max={attr.max} min={attr.min} precision={attr.precision}/>
-        </div>
-    } else if (config.type === 'void') {
-        return <div>{attr.text || '空'}</div>
-    } else if (config.type === 'string') {
-        return <div>
-            <Input value={value} onChange={(e) => {
-                const {value} = e.target;
-                setValue(value)
-            }} maxLength={attr.max}/>
-        </div>
-    } else if (config.type === 'boolean') {
-        return <div>
-            {
-                attr.type === 'checkbox' ?
-                    <Checkbox checked={value} onChange={(e) => {
-                        setValue(e.target.checked)
-                    }}/> :
-                    <Switch checked={value} onChange={(val) => {
-                        setValue(val)
-                    }}/>
-            }
-        </div>
-    } else if (config.type === 'array') {
-        return <div
-            className="array"
-            style={{display: attr.type === 'cardColumn' ? 'flex' : ''}}
-        >
-            {value.map((item, key) => {
-                return <div
-                    style={{
-                        width: attr.cardWidth || 300,
-                        height: attr.cardHeight || 'auto'
-                    }}
-                    className="card"
-                    key={key}
-                >
-                    <div style={{flex: 1}}>
-                        <Item config={config.value} value={item} setValue={(val) => {
-                            const newArr = [...value]
-                            newArr[key] = val;
-                            setValue(newArr)
-                        }}/>
-                    </div>
-                    <div className="close">
-                        <CloseCircleOutlined
-                            onClick={() => {
-                                const newArr = [...value];
-                                newArr.splice(key, 1)
-                                setValue(newArr)
-                            }}/>
-                    </div>
-                </div>
-            })}
-            {
-                (!attr.max || value.length < attr.max) && <Button
-                    type="primary"
-                    icon={<PlusOutlined/>}
-                    style={{margin: 5}}
-                    onClick={() => {
-                        setValue([...value, getDefaultValue(config.value)])
-                    }}
-                >{attr.addText || '添加'}</Button>
-            }
-        </div>
-    } else if (config.type === '|') {
-        return <div style={{display: 'flex'}}>
-            <div>
-                <Select defaultValue={orType} onChange={(val) => {
-                    seOrType(val)
-                }}>
-                    {
-                        config.value.map((item, key) => {
-                            return <Option value={key}>{attr['name[' + key + ']'] || item.type}</Option>
-                        })
-                    }
-                </Select>
+    const [orType, seOrType] = useState(temp);
+    let attr = config.attr ? config.attr : {};
+
+    function tempFunc() {
+        if (config.type === 'number') {
+            return <div>
+                <InputNumber value={value} onChange={(value) => {
+                    setValue(value)
+                }} max={attr.max} min={attr.min} precision={attr.precision}/>
             </div>
-            {
-                config.value[orType] && <div>
-                    <Item config={config.value[orType]} value={value} setValue={(val) => {
-                        setValue(val)
-                    }}/>
+        } else if (config.type === 'void') {
+            return <div>{attr.text || '空'}</div>
+        } else if (config.type === 'string') {
+            return <div>
+                <Input value={value} onChange={(e) => {
+                    const {value} = e.target;
+                    setValue(value)
+                }} maxLength={attr.max}/>
+            </div>
+        } else if (config.type === 'boolean') {
+            return <div>
+                {
+                    attr.type === 'checkbox' ?
+                        <Checkbox checked={value} onChange={(e) => {
+                            setValue(e.target.checked)
+                        }}/> :
+                        <Switch checked={value} onChange={(val) => {
+                            setValue(val)
+                        }}/>
+                }
+            </div>
+        } else if (config.type === 'array') {
+            return <div
+                className="array"
+                style={{display: attr.type === 'cardColumn' ? 'flex' : ''}}
+            >
+                {value.map((item, key) => {
+                    return <div
+                        style={{
+                            width: attr.cardWidth || 'auto',
+                            height: attr.cardHeight || 'auto'
+                        }}
+                        className="card"
+                        key={key}
+                    >
+                        <div style={{flex: 1}}>
+                            <Item config={config.value} value={item} setValue={(val) => {
+                                const newArr = [...value]
+                                newArr[key] = val;
+                                setValue(newArr)
+                            }} globleKey={globleKey + '-' + config.value.type}/>
+                        </div>
+                        <div className="close">
+                            <CloseCircleOutlined
+                                onClick={() => {
+                                    const newArr = [...value];
+                                    newArr.splice(key, 1)
+                                    setValue(newArr)
+                                }}/>
+                        </div>
+                    </div>
+                })}
+                {
+                    (!attr.max || value.length < attr.max) && <Button
+                        type="primary"
+                        icon={<PlusOutlined/>}
+                        style={{margin: 5}}
+                        onClick={() => {
+                            setValue([...value, getDefaultValue(config.value)])
+                        }}
+                    >{attr.addText || '添加'}</Button>
+                }
+            </div>
+        } else if (config.type === '|') {
+            return <div style={{display: 'flex'}}>
+                <div>
+                    <Select defaultValue={orType} onChange={(val) => {
+                        seOrType(val)
+                    }}>
+                        {
+                            config.value.map((item, key) => {
+                                return <Option value={key}>{attr['name[' + key + ']'] || item.type}</Option>
+                            })
+                        }
+                    </Select>
                 </div>
-            }
-        </div>
-    } else if (config.type === 'tuple') {
-        const newArr = [...value]
-        return <div style={{border: 'solid 1px grey', textAlign: 'left'}}>
-            {
-                config.value.map((item, key) => {
-                    return <div style={{margin: 5}}>
-                        <Item config={item} value={value[key]} setValue={(val) => {
-                            newArr[key] = val;
-                            setValue(newArr)
+                {
+                    config.value[orType] && <div>
+                        <Item config={config.value[orType]} value={value} setValue={(val) => {
+                            setValue(val)
                         }}/>
                     </div>
-                })
-            }
-        </div>
-    } else if (config.type === 'object') {
-        return <div>
-            {
-                config.value.map(item => {
-                    return <div className='ant-row ant-form-item' key={item.key}>
-                        <div className={'ant-col ant-col-' + (attr.left || 8) + ' ant-form-item-label'}>
-                            <label className={item.mastNeed ? 'ant-form-item-required' : ''}>
-                                {(item.attr && item.attr.title) ? item.attr.title : item.key}
-                            </label>
+                }
+            </div>
+        } else if (config.type === 'tuple') {
+            const newArr = [...value]
+            return <div style={{border: 'solid 1px grey', textAlign: 'left'}}>
+                {
+                    config.value.map((item, key) => {
+                        return <div style={{margin: 5}}>
+                            <Item config={item} value={value[key]} setValue={(val) => {
+                                newArr[key] = val;
+                                setValue(newArr)
+                            }} globleKey={globleKey + '-' + key}/>
                         </div>
-                        <div className={'ant-col ant-col-' + (attr.right || 16) + ' ant-form-item-control'}>
-                            <div className='ant-form-item-control-input'>
-                                <Item config={item.value} value={value[item.key]} setValue={(val) => {
-                                    setValue({...value, [item.key]: val})
-                                }}/>
-                            </div>
-                        </div>
+                    })
+                }
+            </div>
+        } else if (config.type === 'object') {
+            return <div>
+                {
+                    config.value.map(item => {
+                        return <Item
+                            config={item}
+                            value={value[item.key]}
+                            setValue={(val) => {
+                                setValue({...value, [item.key]: val})
+                            }}
+                            globleKey={globleKey + '-' + item.key}
+                        />
+                    })
+                }
+            </div>
+        } else if (config.type === 'objectValue') {
+            return <div className='ant-row ant-form-item' key={config.key}>
+                <div className={'ant-col ant-col-' + (attr.left || 8) + ' ant-form-item-label'}>
+                    <label className={config.mastNeed ? 'ant-form-item-required' : ''}>
+                        {(config.attr && config.attr.title) ? config.attr.title : config.key}
+                    </label>
+                </div>
+                <div className={'ant-col ant-col-' + (attr.right || 16) + ' ant-form-item-control'}>
+                    <div className='ant-form-item-control-input'>
+                        <Item
+                            config={config.value}
+                            value={value}
+                            setValue={(val) => {
+                                setValue(val)
+                            }}
+                            globleKey={globleKey + '-' + config.value.type}
+                        />
                     </div>
-                })
-            }
-        </div>
-    } else {
-        return <div>11{JSON.stringify(config, 2)}</div>
+                </div>
+            </div>
+        } else {
+            return <div>11{JSON.stringify(config, 2)}</div>
+        }
     }
+
+    return <div className={globleKey.replace(/^-/, '') === globleSelectedKeys ? 'selected' : ''}>{tempFunc()}</div>
 }
+
+let globleSelectedKeys = '';
 
 function protypeInfoTree(config, beforeKey = '') {
     const key = beforeKey + (beforeKey !== '' ? '-' : '') + config.type;
@@ -195,7 +216,7 @@ function protypeInfoTree(config, beforeKey = '') {
             children: config.value.map(item => {
                 return {
                     key: key + '-' + item.key,
-                    title: item.key,
+                    title: (item.attr && item.attr.title) ? (item.attr.title + '（' + item.key + '）') : item.key,
                     children: [protypeInfoTree(item.value, key + '-' + item.key)]
                 }
             })
@@ -392,6 +413,7 @@ function App() {
                         setValue={(val) => {
                             setValue(val)
                         }}
+                        globleKey={config.type}
                     />
                 </div>
                 <div style={{border: 'solid 1px black', marginTop: 30}}>
@@ -409,6 +431,7 @@ function App() {
                         if (selectedKeys.length > 0) {
                             const keyList = selectedKeys[0].split('-').slice(1);
                             setSelectedKeys(selectedKeys[0].split('-').slice(1));
+                            globleSelectedKeys = selectedKeys[0];
                             let temp = config;
                             for (let i = 0; i < keyList.length; i++) {
                                 const key = keyList[i];
@@ -428,6 +451,7 @@ function App() {
                             setSelectType(temp);
                             setSelectTypeAttr(temp.attr);
                         } else {
+                            globleSelectedKeys = '';
                             setSelectType({type: ''});
                             setSelectTypeAttr(null);
                         }
