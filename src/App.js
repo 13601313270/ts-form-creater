@@ -1,12 +1,13 @@
 import {parse, checkByOption} from 'ts-running'
 import React from 'react';
-import {Input, InputNumber, Button, Select, Switch, Tree, Form, Checkbox} from 'antd';
+import {Input, InputNumber, Button, Select, Switch, Tree, Form, Checkbox, Table, Space, Modal} from 'antd';
 import {PlusOutlined, CloseCircleOutlined} from '@ant-design/icons';
 import './App.css';
 import 'antd/dist/antd.css';
 
 const {useState} = React;
 const {Option} = Select;
+const {Column} = Table;
 
 function getDefaultValue({type, value}) {
     if (type === 'number') {
@@ -41,6 +42,9 @@ function Item({config, value, setValue, globleKey}) {
         }
     }
     const [orType, seOrType] = useState(temp);
+    const [modalShow, setModalShow] = useState(false);
+    const [modalSelectIndex, setModalSelectIndex] = useState(-1);
+    const [modalSelectRecord, setModalSelectRecord] = useState(null);
     let attr = config.attr ? config.attr : {};
 
     function tempFunc() {
@@ -72,47 +76,110 @@ function Item({config, value, setValue, globleKey}) {
                 }
             </div>
         } else if (config.type === 'array') {
-            return <div
-                className="array"
-                style={{display: attr.type === 'cardColumn' ? 'flex' : ''}}
-            >
-                {value.map((item, key) => {
-                    return <div
-                        style={{
-                            width: attr.cardWidth || 'auto',
-                            height: attr.cardHeight || 'auto'
+            if (attr.type === 'table' && config.value.type === 'object') {
+                return <div style={{border: 'solid 1px #9e9e9e', padding: 10}}>
+                    {
+                        (!attr.max || value.length < attr.max) && <Button
+                            type="primary"
+                            icon={<PlusOutlined/>}
+                            style={{margin: 5, float: 'right'}}
+                            onClick={() => {
+                                setValue([...value, getDefaultValue(config.value)])
+                            }}
+                        >{attr.addText || '添加'}</Button>
+                    }
+                    <Table dataSource={value}>
+                        {
+                            config.value.value.map(objectValue => {
+                                return <Column
+                                    title={(objectValue.attr && objectValue.attr.title) ? objectValue.attr.title : objectValue.key}
+                                    dataIndex={objectValue.key}
+                                    key={objectValue.key}
+                                />
+                            })
+                        }
+                        <Column
+                            title="操作"
+                            key="action"
+                            width={180}
+                            render={(text, record) => (
+                                <Space size="middle">
+                                    <Button onClick={() => {
+                                        setModalShow(true);
+                                        setModalSelectRecord(record)
+                                        setModalSelectIndex(value.indexOf(record))
+                                    }}>修改</Button>
+                                    <Button onClick={() => {
+                                        const newArr = [...value];
+                                        newArr.splice(value.indexOf(record), 1)
+                                        setValue(newArr)
+                                    }}>删除</Button>
+                                </Space>
+                            )}
+                        />
+                    </Table>
+                    <Modal
+                        title="编辑"
+                        visible={modalShow}
+                        onOk={() => {
+                            console.log(modalSelectRecord)
+                            const newArr = [...value];
+                            newArr[modalSelectIndex] = modalSelectRecord;
+                            setValue(newArr)
+                            setModalShow(false)
                         }}
-                        className="card"
-                        key={key}
+                        onCancel={() => {
+                            setModalShow(false)
+                        }}
                     >
-                        <div style={{flex: 1}}>
-                            <Item config={config.value} value={item} setValue={(val) => {
-                                const newArr = [...value]
-                                newArr[key] = val;
-                                setValue(newArr)
-                            }} globleKey={globleKey + '-' + config.value.type}/>
-                        </div>
-                        <div className="close">
-                            <CloseCircleOutlined
-                                onClick={() => {
-                                    const newArr = [...value];
-                                    newArr.splice(key, 1)
+                        <Item config={config.value} value={modalSelectRecord} setValue={(val) => {
+                            setModalSelectRecord(val);
+                        }} globleKey={globleKey + '-' + config.value.type}/>
+                    </Modal>
+                </div>
+            } else {
+                return <div
+                    className="array"
+                    style={{display: attr.type === 'cardColumn' ? 'flex' : ''}}
+                >
+                    {value.map((item, key) => {
+                        return <div
+                            style={{
+                                width: attr.cardWidth || 'auto',
+                                height: attr.cardHeight || 'auto'
+                            }}
+                            className="card"
+                            key={key}
+                        >
+                            <div style={{flex: 1}}>
+                                <Item config={config.value} value={item} setValue={(val) => {
+                                    const newArr = [...value]
+                                    newArr[key] = val;
                                     setValue(newArr)
-                                }}/>
+                                }} globleKey={globleKey + '-' + config.value.type}/>
+                            </div>
+                            <div className="close">
+                                <CloseCircleOutlined
+                                    onClick={() => {
+                                        const newArr = [...value];
+                                        newArr.splice(key, 1)
+                                        setValue(newArr)
+                                    }}/>
+                            </div>
                         </div>
-                    </div>
-                })}
-                {
-                    (!attr.max || value.length < attr.max) && <Button
-                        type="primary"
-                        icon={<PlusOutlined/>}
-                        style={{margin: 5}}
-                        onClick={() => {
-                            setValue([...value, getDefaultValue(config.value)])
-                        }}
-                    >{attr.addText || '添加'}</Button>
-                }
-            </div>
+                    })}
+                    {
+                        (!attr.max || value.length < attr.max) && <Button
+                            type="primary"
+                            icon={<PlusOutlined/>}
+                            style={{margin: 5}}
+                            onClick={() => {
+                                setValue([...value, getDefaultValue(config.value)])
+                            }}
+                        >{attr.addText || '添加'}</Button>
+                    }
+                </div>
+            }
         } else if (config.type === '|') {
             return <div style={{display: 'flex'}}>
                 <div>
@@ -174,14 +241,16 @@ function Item({config, value, setValue, globleKey}) {
                 </div>
                 <div className={'ant-col ant-col-' + (attr.right || 16) + ' ant-form-item-control'}>
                     <div className='ant-form-item-control-input'>
-                        <Item
-                            config={config.value}
-                            value={value}
-                            setValue={(val) => {
-                                setValue(val)
-                            }}
-                            globleKey={globleKey + '-' + config.value.type}
-                        />
+                        <div className="ant-form-item-control-input-content">
+                            <Item
+                                config={config.value}
+                                value={value}
+                                setValue={(val) => {
+                                    setValue(val)
+                                }}
+                                globleKey={globleKey + '-' + config.value.type}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -278,6 +347,7 @@ function App() {
                     <Select>
                         <Option value='cardRow'>纵向排列卡片</Option>
                         <Option value='cardColumn'>横向排列卡片</Option>
+                        <Option value='table'>表格</Option>
                     </Select>
                 </Form.Item>,
                 <Form.Item label="最多数量" name="max">
