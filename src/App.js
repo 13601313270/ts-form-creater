@@ -185,6 +185,7 @@ function Item({config, value, setValue, globleKey}) {
                 <div>
                     <Select defaultValue={orType} onChange={(val) => {
                         seOrType(val)
+                        setValue(getDefaultValue(config.value[val]))
                     }}>
                         {
                             config.value.map((item, key) => {
@@ -259,7 +260,9 @@ function Item({config, value, setValue, globleKey}) {
         }
     }
 
-    return <div className={globleKey.replace(/^-/, '') === globleSelectedKeys ? 'selected' : ''}>{tempFunc()}</div>
+    return <div
+        className={(globleKey !== undefined && globleKey.replace(/^-/, '') === globleSelectedKeys) ? 'selected' : ''}
+    >{tempFunc()}</div>
 }
 
 let globleSelectedKeys = '';
